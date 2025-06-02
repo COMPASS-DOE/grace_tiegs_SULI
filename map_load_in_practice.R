@@ -20,7 +20,6 @@ p_load(tidyverse,
        janitor ## for the clean names
 )
 ## Set data path
-local_path <- "grace_tiegs_SULI/data/"
 data_path <- "raul_vera_SULI/RV Tea_bag_studies_Metadata.xlsx"
 
 ## Set common coordinate reference system
@@ -56,7 +55,10 @@ ggplot() +
   geom_polygon(data = world_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
   geom_sf(data = sf_object, color = "darkgreen") +
-  theme_minimal() +
+  theme_bw() +
   labs(title = "Teabag Sampling Locations",
        x = "Longitude",
        y = "Latitude")
+
+# 6. Save the figure -----------------------------------------------------------
+ggsave("grace_tiegs_SULI/data/teabag_practice_map.png",  width = 7, height = 6)
