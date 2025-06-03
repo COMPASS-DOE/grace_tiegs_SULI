@@ -54,7 +54,7 @@ ggplot() +
 ggplot() +
   geom_polygon(data = world_map, aes(x = long, y = lat, group = group), 
                fill = "lightgrey", color = "white") +
-  geom_sf(data = sf_object, color = "darkgreen") +
+  geom_sf(data = sf_object, aes(size = k, color = ecosystem_zone)) +
   theme_bw() +
   labs(title = "Teabag Sampling Locations",
        x = "Longitude",
@@ -62,3 +62,23 @@ ggplot() +
 
 # 6. Save the figure -----------------------------------------------------------
 ggsave("grace_tiegs_SULI/data/teabag_practice_map.png",  width = 7, height = 6)
+
+
+
+### Make a west US map only
+## trying a new map load in style
+p_load(rnaturalearth, tmaptools)
+remotes::install_github("ropensci/rnaturalearthhires")
+
+west <- ne_states(country = "united states of america") %>%
+  filter(region == "West") %>% filter(name != "Alaska" & name != "Hawaii")
+
+
+western_samples <- sf_object %>% crop_shape(., west, polygon = T)
+
+ggplot() +
+  geom_sf(data = west) +
+  geom_sf(data = western_samples, aes(size = k, color = ecosystem_zone)) +
+  theme_bw()
+
+ggsave("grace_tiegs_SULI/data/teabag_ecosystem_practice_map.png",  width = 7, height = 6)
