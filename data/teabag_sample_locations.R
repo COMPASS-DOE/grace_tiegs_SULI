@@ -78,7 +78,7 @@ ggplot() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(text = element_text(family = "serif")) +
   geom_sf(data = world, fill = "white") +
-  geom_sf(data = teabags_type_sf, aes(color = Category), alpha = 0.6) +
+  geom_sf(data = teabags_type_sf, aes(color = Category), alpha = 0.8) +
   scale_fill_manual(values = c("Forest" = "green",
                                "Wetland" = "blue",
                                "Other" = "red")) +
