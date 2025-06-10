@@ -10,14 +10,20 @@
 ## Load in packages
 require(pacman)
 
+## To be able to download data frame as Excel
+install.packages("xlsx")
+
 p_load(tidyverse,
        tidymodels,
        readxl, # for reading in Raul's tea bag data
        sf, ## for the spatial stuff
        maps, ## for the world map
        janitor, ## for the clean names
-       dplyr
+       dplyr,
+       tidyr,
+       openxlsx
 )
+
 ## Set data path
 data_path_2 <- "raul_vera_SULI/scripts/CoastalTeaBagsPoints.xlsx"
 
@@ -33,7 +39,7 @@ teabags_points_fil <- teabags_points %>% drop_na(longitude, latitude)
 
 ## Lots of statements to categorize the wetland vs forest exactly how we want them
 teabags_type <- teabags_points_fil %>%
-  mutate(Category = (case_when(
+  mutate(category = (case_when(
     (grepl("Mangroves", ecosystem_type_reported) ~ "Wetland"),
     (grepl("Mangroves - dwarf", ecosystem_type_reported) ~ "Wetland"),
     (grepl("Mangroves - Fringe", ecosystem_type_reported) ~ "Wetland"),
@@ -61,10 +67,19 @@ teabags_type <- teabags_points_fil %>%
     TRUE ~ "Other"
   )))
 
-## change to simple feature
-teabags_type_sf <- st_as_sf(teabags_type, coords = c("longitude", "latitude"), 
-                            crs = common_crs)
+# what information do we want specifically? select certain columns
+select_teabags_type <- teabags_type %>%
+  select(objectid, longitude, latitude, ecosystem_type_reported, ecosystem_zone,
+         category, k, s, elevation_meters, clay, nitrogen, organic_carbon_density,
+         p_h, sand, silt)
 
+# save this information as an excel file
+write.xlsx(select_teabags_type, "grace_tiegs_SULI/data/GT_Teabag_Types.xlsx")
+
+## change to simple feature
+## ** note that this is all columns right now. can change to select if needed.
+teabags_type_sf <- (st_as_sf(teabags_type, coords = c("longitude", "latitude"), 
+                            crs = common_crs)) ## %>% select(Category == "Forest"|"Wetland")
 ## change the order that the labels appear and color in for ggplot purposes
 teabags_type_sf$Category <- factor(teabags_type_sf$Category,
                                    levels=c("Forest", "Wetland", "Other"))
@@ -78,11 +93,11 @@ ggplot() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(text = element_text(family = "serif")) +
   geom_sf(data = world, fill = "white") +
-  geom_sf(data = teabags_type_sf, aes(color = Category), alpha = 0.8) +
-  scale_fill_manual(values = c("Forest" = "green",
-                               "Wetland" = "blue",
-                               "Other" = "red")) +
-  labs(title = "Teabag Sampling Locations") +
+  geom_sf(data = teabags_type_sf, aes(color = Category)) +
+  scale_color_manual(values = c("Forest" = "#bbdaa4",
+                               "Wetland" = "#4a80f5",
+                              "Other" = "#d4a1e1")) +
+  labs(title = "Forest and Wetland\nTeabag Sampling Locations") +
   coord_sf(expand = FALSE)
 
 ## more coordinate marks
