@@ -26,7 +26,7 @@ p_load(tidyverse,
 )
 
 ## Set data path
-data_path_2 <- "grace_tiegs_SULI/data/GT_Teabag_Types.xlsx"
+data_path_2 <- "raul_vera_SULI/scripts/CoastalTeaBagsPoints.xlsx"
 
 ## Set common coordinate reference system
 common_crs = 4326
@@ -79,7 +79,7 @@ write.xlsx(select_teabags_type, "grace_tiegs_SULI/data/GT_Teabag_Types.xlsx")
 
 ## change to simple feature
 ## ** note that this is all columns right now. can change to select if needed.
-teabags_type_sf <- (st_as_sf(select_teabags_type, coords = c("longitude", "latitude"), 
+teabags_type_sf <- (st_as_sf(teabags_type, coords = c("longitude", "latitude"), 
                             crs = common_crs)) ## %>% select(Category == "Forest"|"Wetland")
 ## change the order that the labels appear and color in for ggplot purposes
 teabags_type_sf$category <- factor(teabags_type_sf$category,
@@ -106,4 +106,4 @@ ggplot() +
 
 
 # 6. Save the figure -----------------------------------------------------------
-ggsave("grace_tiegs_SULI/data/figures/sites_by_forest_or_wetland_map.png",  width = 7, height = 6)
+ggsave("grace_tiegs_SULI/data/sites_by_forest_or_wetland_map.png",  width = 7, height = 6)
