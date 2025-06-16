@@ -21,7 +21,8 @@ p_load(tidyverse,
        janitor, ## for the clean names
        dplyr,
        tidyr,
-       openxlsx
+       openxlsx,
+       rnaturalearth ## for the world map
 )
 
 ## Set data path
@@ -69,7 +70,7 @@ teabags_type <- teabags_points_fil %>%
 
 # what information do we want specifically? select certain columns
 select_teabags_type <- teabags_type %>%
-  select(objectid, longitude, latitude, ecosystem_type_reported, ecosystem_zone,
+  select(objectid, longitude, latitude, koppen_geiger_climate_class, ecosystem_type_reported, ecosystem_zone,
          category, k, s, elevation_meters, clay, nitrogen, organic_carbon_density,
          p_h, sand, silt)
 
@@ -81,7 +82,7 @@ write.xlsx(select_teabags_type, "grace_tiegs_SULI/data/GT_Teabag_Types.xlsx")
 teabags_type_sf <- (st_as_sf(teabags_type, coords = c("longitude", "latitude"), 
                             crs = common_crs)) ## %>% select(Category == "Forest"|"Wetland")
 ## change the order that the labels appear and color in for ggplot purposes
-teabags_type_sf$Category <- factor(teabags_type_sf$Category,
+teabags_type_sf$category <- factor(teabags_type_sf$category,
                                    levels=c("Forest", "Wetland", "Other"))
 
 world <- ne_coastline()
@@ -93,13 +94,12 @@ ggplot() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(text = element_text(family = "serif")) +
   geom_sf(data = world, fill = "white") +
-  geom_sf(data = teabags_type_sf, aes(color = Category)) +
+  geom_sf(data = teabags_type_sf, aes(color = category)) +
   scale_color_manual(values = c("Forest" = "#bbdaa4",
                                "Wetland" = "#4a80f5",
                               "Other" = "#d4a1e1")) +
   labs(title = "Forest and Wetland\nTeabag Sampling Locations") +
   coord_sf(expand = FALSE)
-
 ## more coordinate marks
 # + scale_y_continuous(limits = c(-60, 85))
 

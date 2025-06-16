@@ -22,6 +22,7 @@ p_load(
        tidymodels, # for starting to build the model
        usemodels, # for specifying the model
        vip, # exploration of feature importance
+       ranger
        )
 
 ## Load in data ################################################################
@@ -33,14 +34,15 @@ teabags <- read_excel(file_path_tea)
 
 teabags_df <- teabags %>%
   filter(!is.na(k)) %>%
-  select(objectid, k, category, elevation_meters, organic_carbon_density,
+  select(k, category, koppen_geiger_climate_class, elevation_meters, organic_carbon_density,
          clay, nitrogen, sand, silt)
 
 ## Exploratory analysis ########################################################
 
 # Here is a good outline of a plot to see what type of data we're looking at
 teabags_df %>%
-  ggplot(aes(sand, k, color = category)) +
+  ggplot(aes(clay, k, color = category)) +
+  xlim(0, 400) +
   geom_point(alpha = 0.4)
 
 ## Build a model ###############################################################
@@ -71,11 +73,15 @@ use_ranger(k ~ ., data = teabags_train)
 # information to run model
 {
 ranger_recipe <- 
-  recipe(formula = k ~ ., data = teabags_train) %>%
-  step_impute_knn(elevation_meters, organic_carbon_density)
+  recipe(formula = k ~ ., data = teabags_train) #%>%
+    
+ # can impute if needed
+ # step_impute_knn(elevation_meters, organic_carbon_density)
 
 ranger_spec <- 
-  rand_forest(mtry = tune(), min_n = tune(), trees = 6) %>% # num trys, trees
+  rand_forest(mtry = tune(), min_n = tune(), trees = 200) %>% # num trys, trees
+  # new try at generating
+  # rand_forest(trees = 100) %>%
   set_mode("regression") %>% ## can set other modes too
   set_engine("ranger") 
 
@@ -89,11 +95,14 @@ ranger_tune <-
   tune_grid(ranger_workflow, resamples = teabags_fold, grid = 11)
 }
 
+
 ## Explore results #############################################################
 show_best(ranger_tune, metric = "rmse") # root mean squared error
 show_best(ranger_tune, metric = "rsq") # R^2
 
 # visualize statistical info
+# (minimal node size = min_n, # ran = mtry)
+# (rmse low is good. rsq high is good.)
 autoplot(ranger_tune)
 
 # finalize parameters now, select best based on rmse
@@ -117,20 +126,24 @@ collect_predictions(teabags_fit) %>%
 # predict on any object
 predict(teabags_fit$.workflow[[1]], teabags_test[150,])
 
+
 # For feature importance
 imp_spec <- ranger_spec %>%
   finalize_model(select_best(ranger_tune)) %>%
   set_engine("ranger",
-             importance = "permutation")
+             importance = "permutation") 
 
 # make another whole model
 # extracting the importance - bar chart
 workflow() %>%
-  add_recipe(ranger_recipe) %>%
+  add_recipe(ranger_recipe) %>% 
   add_model(imp_spec) %>%
   fit(teabags_train) %>%
   extract_fit_parsnip() %>%
-  vip(aesthetics = list(alpha = 0.8, fill = "#DAB1DA"))
+  vip(num_features = 3, aesthetics = list(alpha = 0.8, fill = "#DAB1DA"))
 
 # save the bar chart
 ggsave("grace_tiegs_SULI/data/variable_importance.png",  width = 7, height = 6)
+
+# Trying partial dependence stuff
+#partialPlot(final_rf, k, elevation_meters, 1, x.lab="elevation", ylab="k")
