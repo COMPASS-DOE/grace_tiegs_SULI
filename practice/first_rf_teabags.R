@@ -79,7 +79,7 @@ ranger_recipe <-
  # step_impute_knn(elevation_meters, organic_carbon_density)
 
 ranger_spec <- 
-  rand_forest(mtry = tune(), min_n = tune(), trees = 200) %>% # num trys, trees
+  rand_forest(mtry = tune(), min_n = tune(), trees = 50) %>% # num trys, trees
   # new try at generating
   # rand_forest(trees = 100) %>%
   set_mode("regression") %>% ## can set other modes too
@@ -145,5 +145,34 @@ workflow() %>%
 # save the bar chart
 ggsave("grace_tiegs_SULI/data/variable_importance.png",  width = 7, height = 6)
 
-# Trying partial dependence stuff
-#partialPlot(final_rf, k, elevation_meters, 1, x.lab="elevation", ylab="k")
+
+## The Partial Dependence / Feature Importance ##
+# 2_random_forest_basics.R Peter Regier
+
+rf1 <- ranger(k~sand + silt + clay, 
+              data = teabags_df, 
+              importance = "impurity",
+              num.trees = 1000,
+              mtry = 2)
+
+var_names <- rf1$variable.importance
+col_names <- c("predictor", "raw_fi")
+
+## Convert feature importance to a tibble with variables as a column
+fi1 <- as.data.frame(var_names) %>% 
+  tibble::rownames_to_column() %>% 
+  as_tibble() 
+
+## Rename columns
+colnames(fi1) = col_names
+
+## Random Forest's predictive power contributed by each variable. 
+fi1 %>% 
+  mutate(fi = raw_fi / sum(raw_fi)) %>% 
+  ggplot(aes(fi * 100, 
+             reorder(predictor, fi), fill = predictor)) + 
+  geom_col(alpha = 0.8, show.legend = F, width = 0.7) + 
+  labs(x = "Feature Importance (%)", 
+       y = "", fill = "")
+
+ggsave("grace_tiegs_SULI/data/rf_variable_importance.png",  width = 7, height = 6)
