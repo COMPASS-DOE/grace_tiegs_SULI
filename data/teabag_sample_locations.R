@@ -68,11 +68,20 @@ teabags_type <- teabags_points_fil %>%
     TRUE ~ "Other"
   )))
 
+teabags_type <- teabags_type %>%
+  mutate(mean_precip = rowMeans(select(., starts_with("precip_month_"))))
+
 # what information do we want specifically? select certain columns
 select_teabags_type <- teabags_type %>%
   select(objectid, longitude, latitude, koppen_geiger_climate_class, ecosystem_type_reported, ecosystem_zone,
          category, k, s, elevation_meters, clay, nitrogen, organic_carbon_density,
-         p_h, sand, silt)
+         p_h, sand, silt, soil_organic_carbon_content, water_content_10kpa,
+         water_content_33kpa, water_content_1500kpa, total_nemotode_per100g,
+         total_nemotode_per_square_meter, mean_annual_air_temp_c, mean_precip, precip_month_1,
+         precip_month_2, precip_month_3, precip_month_4, precip_month_5, precip_month_6,
+         precip_month_7, precip_month_8, precip_month_9, precip_month_10, precip_month_11,
+         precip_month_12
+)
 
 # save this information as an excel file
 write.xlsx(select_teabags_type, "grace_tiegs_SULI/data/GT_Teabag_Types.xlsx")
