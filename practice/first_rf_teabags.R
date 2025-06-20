@@ -173,5 +173,8 @@ workflow() %>%
   extract_fit_parsnip() %>%
   vip(num_features = 3, aesthetics = list(alpha = 0.8, fill = "#DAB1DA"))
 
+
+
+
 # save the bar chart
 ggsave("grace_tiegs_SULI/practice/practice data/variable_importance.png",  width = 7, height = 6)
