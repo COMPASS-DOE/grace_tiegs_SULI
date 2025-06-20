@@ -8,7 +8,7 @@
 
 
 ## Set columns for independent and dependent variables #########################
-###dependents <- c("k")
+dep <- c("k")
 #k_predictors <- c("category", "ecosystem_type_reported", "koppen_geiger_climate_class",
                   #"elevation_meters", "organic_carbon_density", "clay", "nitrogen", "sand",
                   #"silt", "mean_annual_air_temp_c", "mean_precip")
