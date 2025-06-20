@@ -21,6 +21,8 @@ p_load(
        hydroGOF
        )
 
+source("grace_tiegs_SULI/R scripts/constants_RF.R")
+
 ## 2. Load in data #############################################################
 file_path_tea <- ("grace_tiegs_SULI/data/GT_Teabag_Types.xlsx")
 teabags <- read_excel(file_path_tea)
@@ -36,7 +38,7 @@ teabags_df %>% mutate(white_noise = rnorm(1:n(), mean = 0, sd = 1))
 # Set the dependent variable for the models
 var = "k"
 
-############ FUNCTION TESTING ZONE #######################
+############ VARIABLES FOR TESTING FUNCTION CODE #######################
 
 data = teabags
 predictors = k_predictors
@@ -46,53 +48,6 @@ model = "ranger"
 m_try = 2
 ntree = 50
 model_no = 1
-
-model_data <- data %>% 
-  dplyr::select({{var}}) %>% 
-  mutate(dep = k) %>% 
-  filter(!is.na(var))
-
-set.seed(123)
-data_split <- initial_split(model_data, strata = var, prop = proportion)
-data_train <- training(data_split)
-data_test <- testing(data_split)
-n_test = nrow(data_test)
-data_fold <- bootstraps(data_train, strata = var)
-
-
-ranger_recipe <- data_train %>%
-  recipe(as.formula(paste(var, "~ ."))) %>%
-  step_corr(all_predictors(), -all_outcomes()) %>%
-  prep()
-
-set.seed(234)
-
-rf_model <- 
-  rand_forest(mtry = m_try, trees =  ntree, mode = "regression") %>%
-  set_engine(model) %>%
-  fit(dep ~ ., data = data_train)
-
-model_fit <- data_test %>%
-  mutate(predict(rf_model, data_test))
-
-# Calculate metrics for model performance
-rmse = hydroGOF::rmse(model_fit$.pred, model_fit$dep)
-r2 = hydroGOF:: gof(model_fit$.pred, model_fit$dep)["R2", ]
-
-# Shows which model is run to keep track of progress
-print(paste(model, data, predictors, proportion, m_try, ntree))
-
-# All the information exported
-output = tibble(#data = data,
-                dep = {{var}},
-                predictors = predictors,
-                proportion = proportion,
-                m_try = m_try,
-                ntree = ntree,
-                rmse = rmse,
-                r2 = r2,
-                n_test = n_test
-)
 
 ########################################################
 ########################################################
@@ -125,7 +80,7 @@ calculate_metrics <- function(data = data,
     # Set up recipe
     ranger_recipe <- data_train %>%
       recipe(as.formula(paste(var, "~ ."))) %>%
-## changed this to all_numeric instead of all  
+      # changed this to all_numeric from all
       step_corr(all_numeric_predictors(), -all_outcomes()) %>%
       prep()
     
@@ -173,5 +128,5 @@ calculate_metrics(data = teabags, predictors = k_predictors, proportion = 0.5, v
   
 #  toc()
   
-write.xlsx(models_oob, "grace_tiegs_SULI/data/model_metrics.xlsx")
+#write.xlsx(models_oob, "grace_tiegs_SULI/data/model_metrics.xlsx")
  
