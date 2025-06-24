@@ -42,71 +42,6 @@ teabags <- read_excel(file_path_tea) %>%
 #var = "k"
 
 
-model_data <- as_tibble(teabags) %>% 
-  dplyr::select(c({{var}}, 
-                  all_of(all_predictors))) %>%
-  mutate(white_noise = rnorm(1:n(), mean = 0, sd = 1)) %>% 
-  mutate(dep = eval(parse(text = var))) %>% 
-  dplyr::select(-c({{var}}, k)) %>%
-  drop_na()
-
-# Split up training and set
-set.seed(123)
-data_split <- initial_split(model_data, prop = 0.7)
-data_train <- training(data_split)
-data_test <- testing(data_split)
-n_test = nrow(data_test)
-#data_fold <- bootstraps(data_train, strata = dep)
-
-# Set up recipe
-ranger_recipe <- data_train %>%
-  recipe(dep ~ .) %>%
-  #as.formula(paste(dep, "~ ."))) %>%
-  step_corr(all_predictors(), -all_outcomes()) %>%
-  #step_corr(all_numeric_predictors(), -all_outcomes()) %>%
-  prep()
-
-# Make the actual model
-set.seed(234)
-
-rf_model <-
-  rand_forest(mtry = m_try, trees =  ntree, mode = "regression") %>%
-  set_engine("ranger") %>%
-  fit(dep ~ ., data = data_train)
-
-# Calculate predicted variables
-model_fit <- data_test %>%
-  mutate(predict(rf_model, data_test))
-
-ggplot(model_fit, aes(dep, .pred)) + geom_point()
-
-# Calculate metrics for model performance
-rmse = hydroGOF::rmse(model_fit$.pred, model_fit$dep)
-r2 = hydroGOF:: gof(model_fit$.pred, model_fit$dep)["R2", ]
-
-# Shows which model is run to keep track of progress
-print(paste(model, paste(predictors, collapse = ","), proportion, m_try, ntree))
-
-# # All the information exported
-output = tibble(dep = {{var}},
-                predictors = paste(predictors, collapse = ","),
-                proportion = proportion,
-                m_try = m_try,
-                ntree = ntree,
-                rmse = rmse,
-                r2 = r2,
-                n_test = n_test)
-
-ggplot(model_fit, aes(dep, .pred)) + geom_point() + 
-  geom_abline(slope = 1, intercept = 0)
-
-output
-
-
-
-
-
-
 ## 3. Set up function and test -------------------------------------------------
 
 source("R scripts/constants_RF.R")
@@ -121,6 +56,8 @@ calculate_metrics <- function(proportion = proportion,
   
   model_data <- as_tibble(teabags) %>% 
     dplyr::select(c({{var}}, 
+                    koppen_geiger_climate_class, category,
+                    elevation_meters,
                     all_of(all_predictors))) %>%
     mutate(white_noise = rnorm(1:n(), mean = 0, sd = 1)) %>% 
     mutate(dep = eval(parse(text = var))) %>% 
@@ -138,6 +75,9 @@ calculate_metrics <- function(proportion = proportion,
   # Set up recipe
   ranger_recipe <- data_train %>%
     recipe(dep ~ .) %>%
+    step_normalize(all_numeric_predictors()) %>%  # Normalize numeric predictors
+    step_unknown(all_nominal_predictors()) %>%   # Handle unknown factor levels
+    step_dummy(all_nominal_predictors()) %>% 
     step_corr(all_predictors(), -all_outcomes()) %>%
     prep()
   
