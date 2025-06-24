@@ -19,7 +19,7 @@ theme_set(theme_bw())
 
 ## Prep list of models to run ##################################################
 
-dataset = "teabags"
+#dataset = "teabags"
 model_package = "ranger"
 predictors = all_predictors
 proportion = c(0.6, 0.7, 0.8, 0.9)
