@@ -21,7 +21,7 @@ p_load(
        cowplot, # for organizing plots
        tictoc,
        hydroGOF,
-       readr
+       readr,
        )
 
 
@@ -96,6 +96,7 @@ calculate_metrics <- function(proportion = proportion,
   # Calculate metrics for model performance
   rmse = hydroGOF::rmse(model_fit$.pred, model_fit$dep)
   r2 = hydroGOF:: gof(model_fit$.pred, model_fit$dep)["R2", ]
+  nse = hydroGOF::NSE(model_fit$.pred, model_fit$dep)
 
   # Shows which model is run to keep track of progress
   print(paste(model, paste(predictors, collapse = ","), proportion, m_try, ntree))
@@ -108,6 +109,7 @@ calculate_metrics <- function(proportion = proportion,
                   ntree = ntree,
                   rmse = rmse,
                   r2 = r2,
+                  nse=nse,
                   n_test = n_test)
 
   ggplot(model_fit, aes(dep, .pred)) + geom_point() + 
@@ -137,11 +139,55 @@ models_oob <- model_list %>%
 toc()
 
 ## Analyzing Data #########################
-ggplot(models_oob, aes(as.factor(proportion), r2)) + 
+p1 <- ggplot(models_oob, aes(as.factor(proportion), r2)) + 
   geom_boxplot()
 
+p2 <- ggplot(models_oob, aes(as.factor(m_try), r2)) + 
+  geom_boxplot()
+
+p3 <- ggplot(models_oob, aes(as.factor(ntree), r2)) + 
+  geom_boxplot()
+
+p4 <- ggplot(models_oob, aes(as.factor(proportion), nse)) + 
+  geom_boxplot()
+
+p5 <- ggplot(models_oob, aes(as.factor(m_try), nse)) + 
+  geom_boxplot()
+
+p6 <- ggplot(models_oob, aes(as.factor(ntree), nse)) + 
+  geom_boxplot()
+
+plot_grid(p1, p2, p3, p4, p5, p6, nrow = 2, ncol = 3)
+
+ggsave("data/r2_nse_boxplot.png")
+
+
+myboxplot <- function(my_factor, var, ylab, my_title){
   
+  colors = c("#A9A9A9", "#8FBC8F", "#4682B4", "#8B4513", "#FEA82F", "#E5DADA")
+  
+  ymin = min(models_oob %>% select({{var}}))
+  
+  ggplot(models_oob, 
+         aes(x = as.factor({{my_factor}}), y = {{var}}, fill = as.factor({{my_factor}}))) + 
+    geom_boxplot(alpha = 0.9, color = "#0D0E23") + 
+    labs(x = "", y = ylab, title = my_title, fill = "") +
+    scale_y_continuous(limits = c(ymin, 0.45)) + 
+    scale_fill_manual(values = colors) + 
+    theme(legend.position='none',
+      #legend.background = element_blank(),
+      #legend.key = element_rect(fill="transparent"),
+      plot.title = element_text(hjust = 0.5))
+}
+
+plot_grid(myboxplot(proportion, r2, parse(text = "R^2"), "Dataset Split Ratio"), 
+          myboxplot(m_try, r2, "", "Variables Used Per Split"), 
+          myboxplot(ntree, r2, "", "Num. Trees"), 
+          nrow = 1)
+
+ggsave("data/metrics_color_boxplot.png", width = 13, height = 5)
+
 ## Saving Outputs ##############################################################
 
-write_csv(models_oob, "data/model_metrics_pr.csv")
+write_csv(models_oob, "data/model_metrics.csv")
  
