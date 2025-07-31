@@ -30,20 +30,18 @@ generate_combos <- function(names_vector, min_combo_size){
   return(combos_list)
 }
 
-
-combo_results <- generate_combos(predictor_names, 4)
+## modify if you want to see variability in predictors.
+## setting min # of predictors in each
+combo_results <- generate_combos(predictor_names, 19)
 
 # ggplot theme
 theme_set(theme_bw())
 
 ## Prep list of models to run ##################################################
-
-#dataset = "teabags"
 model_package = "ranger"
-predictors = predictor_names
-proportion = 0.8
-m_try = 4
-ntree = 1000
+proportion = c(0.6, 0.7, 0.8, 0.9)
+m_try = c(2, 3, 4, 5, 6)
+ntree = c(100, 500, 1000, 2000)
 
 model_list <- tibble(expand.grid(m_try = m_try,
                                  ntree = ntree,
